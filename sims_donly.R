@@ -7,7 +7,7 @@ set.seed(4)
 
 library(MASS)
 library(ppcor)
-source('MRest.R')
+source('MRest_three.R')
 
 make_geno <- function(nid, nsnp, af)
 {
@@ -15,16 +15,31 @@ make_geno <- function(nid, nsnp, af)
 }
 
 
-reps = 5
+reps = 1000
 n = 150000 #number of individuals (should be 150000)
 l = 150    #number of SNPs (for exposures - total)
 lo = 10 #number of SNPs for outcome
 
 results = NULL
 
+beta1 = 0.3
+beta2 = 0.2
+beta3 = 0.2
+
 #define effects outside the repetitions so they are consistent across the simulations
-effs_g <- rnorm(l,0,sqrt(0.15/l))  
-effs_g2 <- 0.3*effs_g + rnorm((l),0,sqrt(0.15/l))
+
+var1 <- 0.10/l
+cor12 <- 0.3
+cor13 <- 0.1
+cor23 <- 0.3
+mu <- as.vector(c(0,0,0))
+sig <- matrix(c(var1, cor12*var1, cor13*var1, cor13*var1, var1, cor23*var1, cor13*var1, cor23*var1, var1), 3, 3)
+effects <- mvrnorm(l, mu, sig)
+
+effs_g <- (effects[,1])
+effs_g2 <- (effects[,2])
+effs_g3 <- (effects[,3])
+
 effs_out <- rnorm(lo,0,sqrt(0.3/l))
 effs_c1 <- 0.5
 effs_c2 <- 0.5
@@ -48,8 +63,6 @@ for(i in 1:reps){
   
   #d. model where there are three periods but only two included.
   
-  effs_g3 <- 0.1*effs_g + 0.25*effs_g2 + 0.65*rnorm(l,0,sqrt(0.15/l))
-  
   L1 <- g[,1:l]%*%effs_g 
   L2 <- g[,1:l]%*%effs_g2
   L3 <- g[,1:l]%*%effs_g3
@@ -67,17 +80,18 @@ for(i in 1:reps){
   x3b <- L3b + effs_c2*u3b + 0.1*x2b + 0.9*rnorm(n,0,1) 
   
   #outcome
-  y <- 0.2*x1b + 0.3*x2b + 0.2*x3b + gb[,(l+1):(l+lo)]%*%effs_out + 0.3*effs_c1*ub + 0.3*effs_c2*u2b + 0.3*effs_c2*u3b
+  y <- beta1*x1b + beta2*x2b + beta3*x3b + gb[,(l+1):(l+lo)]%*%effs_out + 0.3*effs_c1*ub + 0.3*effs_c2*u2b + 0.3*effs_c2*u3b
   
-  res <- MRest()
+  res <- MRest_three()
   resd <- data.frame("d", res)
   colnames(resd)[1] <- ("sim")
   
-  resd$beta1_u <- 0.2 + 0.1*(0.3+0.1*0.2) + cor(effs_g, effs_g2)*0.3 + cor(effs_g, effs_g3)*0.2
-  resd$beta2_u <- 0.3 + 0.1*0.2 + cor(effs_g, effs_g2)*0.2 + cor(effs_g2, effs_g3)*0.2
   
-  resd$beta1_m <- 0.2 + (pcor.test(effs_g,effs_g3,effs_g2)$estimate)*0.2
-  resd$beta2_m <- 0.3 + (pcor.test(effs_g2,effs_g3,effs_g)$estimate)*0.2
+  resd$beta1_u <- beta1 + 0.1*beta2 + 0.01*beta3 + resd$cor12*(sqrt(resd$var2)/sqrt(resd$var1))*beta2 + resd$cor13*(sqrt(resd$var3)/sqrt(resd$var1))*beta3 
+  resd$beta2_u <- beta2 + resd$cor12*(sqrt(resd$var1)/sqrt(resd$var2))*(beta1) + resd$cor23*(sqrt(resd$var3)/sqrt(resd$var2))*beta3 
+  
+  resd$beta1_m <- beta1 + resd$pcor13_2*(sqrt(resd$var3)/sqrt(resd$var1))*beta3
+  resd$beta2_m <- beta2 + resd$pcor23_1*(sqrt(resd$var3)/sqrt(resd$var2))*beta3
   
   results <- rbind(results,resd)
   

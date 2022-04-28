@@ -2,10 +2,10 @@
   
   rm(list = ls(all=TRUE))
   
-  set.seed(8)
+  set.seed(4)
   
   library(MASS)
-  library(ppcor)
+  #library(ppcor)
   source('MRest_x1x3.R')
   
   make_geno <- function(nid, nsnp, af)
@@ -26,9 +26,18 @@
   results = NULL
   
   #define effects outside the repetitions so they are consistent across the simulations
-  effs_g <- rnorm(l,0,sqrt(0.15/l))  
-  effs_g2 <- 0.25*effs_g + 0.75*rnorm(l,0,sqrt(0.15/l))
-  effs_g3 <- 0.1*effs_g + 0.25*effs_g2 + 0.65*rnorm(l,0,sqrt(0.15/l))
+  var1 <- 0.10/l
+  cor12 <- 0.3
+  cor13 <- 0.1
+  cor23 <- 0.3
+  mu <- as.vector(c(0,0,0))
+  sig <- matrix(c(var1, cor12*var1, cor13*var1, cor13*var1, var1, cor23*var1, cor13*var1, cor23*var1, var1), 3, 3)
+  effects <- mvrnorm(l, mu, sig)
+  
+  effs_g <- effects[,1]
+  effs_g2 <- (effects[,2])
+  effs_g3 <- (effects[,3])
+  
   effs_out <- rnorm(lo,0,sqrt(0.3/l))
   effs_c1 <- 0.5
   effs_c2 <- 0.5
@@ -52,7 +61,7 @@
     #d. model where there are three periods but only two included.
     
     L1 <- g[,1:l]%*%effs_g 
-    L2 <- g[,1:l]%*%effs_g2
+    L2 <- g[,1:l]%*%effs_g2 
     L3 <- g[,1:l]%*%effs_g3
     
     x1 <- L1 + effs_c1*ua + rnorm(n,0,1)
@@ -73,17 +82,18 @@
     res <- MRest_x1x3()
     res_x1x3a <- data.frame("x1x3a", res)
     colnames(res_x1x3a)[1] <- ("sim")
-    
-    res_x1x3a$beta1_u <- beta1 + 0.1*(beta2+0.1*beta3) + cor(effs_g, effs_g2)*beta2 + cor(effs_g, effs_g3)*beta3
-    res_x1x3a$beta3_u <- beta3 + cor(effs_g, effs_g3)*(beta1+0.1*beta2) + cor(effs_g2, effs_g3)*beta2
 
-    res_x1x3a$beta1_m <- beta1 + (pcor.test(effs_g,effs_g2,effs_g3)$estimate)*beta2
-    res_x1x3a$beta3_m <- beta3 + (pcor.test(effs_g2,effs_g3,effs_g)$estimate)*beta2
+    res_x1x3a$beta1_u <- beta1 + 0.1*beta2 + 0.01*beta3 + res_x1x3a$cor12*(sqrt(res_x1x3a$var2)/sqrt(res_x1x3a$var1))*beta2 + res_x1x3a$cor13*(sqrt(res_x1x3a$var3)/sqrt(res_x1x3a$var1))*beta3 
+    res_x1x3a$beta3_u <- beta3 + res_x1x3a$cor13*(sqrt(res_x1x3a$var1)/sqrt(res_x1x3a$var3))*(beta1 +0.1*beta2) + res_x1x3a$cor23*(sqrt(res_x1x3a$var2)/sqrt(res_x1x3a$var3))*beta2 
     
+    res_x1x3a$beta1_m <- beta1 + res_x1x3a$pcor12_3*(sqrt(res_x1x3a$var2)/sqrt(res_x1x3a$var1))*beta2
+    res_x1x3a$beta3_m <- beta3 + res_x1x3a$pcor23_1*(sqrt(res_x1x3a$var2)/sqrt(res_x1x3a$var3))*beta2
+    
+  
     results <- rbind(results,res_x1x3a)
     
   }
   
   
-  save(results, file="sim_output_x1x3a.Rda")
+save(results, file="sim_output_x1x3a.Rda")
   

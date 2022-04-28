@@ -14,7 +14,7 @@ make_geno <- function(nid, nsnp, af)
 }
 
 
-reps = 2000
+reps = 2
 n = 150000 #number of individuals
 l = 150    #number of SNPs (for exposures - total)
 lo = 50 #number of SNPs for outcome
@@ -76,5 +76,5 @@ for(i in 1:reps){
 }
 
 
-save(results, file="sim_output_c.Rda")
+#save(results, file="sim_output_c.Rda")
 

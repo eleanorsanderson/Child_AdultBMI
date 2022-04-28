@@ -52,10 +52,13 @@ MRest_x1x3 <- function()
   snps_outx1 <- as.numeric(sum((mvdat$exposure_pval.x1[(l+1):(l+lo)]<5e-08)))
   snps_outx3 <- as.numeric(sum((mvdat$exposure_pval.x3[(l+1):(l+lo)]<5e-08)))
   
-  pcor12 <- pcor.test(mv$exposure_beta.x2, mv$exposure_beta.x1, mv$exposure_beta.x3)$estimate
-  pcor23 <- pcor.test(mv$exposure_beta.x2, mv$exposure_beta.x3, mv$exposure_beta.x1)$estimate
+  #pcor12 <- pcor.test(mv$exposure_beta.x2, mv$exposure_beta.x1, mv$exposure_beta.x3)$estimate
+  #pcor23 <- pcor.test(mv$exposure_beta.x2, mv$exposure_beta.x3, mv$exposure_beta.x1)$estimate
   
-out <- data.frame(rho, pcor12, pcor23, unix1$coefficients[1,1],unix1$coefficients[1,2], nrow(dat1), mean(F_1), 
+out <- data.frame(rho, cor(mv$exposure_beta.x1,mv$exposure_beta.x2),   cor(mv$exposure_beta.x1,mv$exposure_beta.x3),   cor(mv$exposure_beta.x2,mv$exposure_beta.x3),
+                  pcor.test(mv$exposure_beta.x1,mv$exposure_beta.x2,mv$exposure_beta.x3)$estimate, pcor.test(mv$exposure_beta.x3,mv$exposure_beta.x2,mv$exposure_beta.x1)$estimate, 
+                  var(mv$exposure_beta.x1), var(mv$exposure_beta.x2),var(mv$exposure_beta.x3),
+                   unix1$coefficients[1,1],unix1$coefficients[1,2], nrow(dat1), mean(F_1), 
                     unix2$coefficients[1,1],unix2$coefficients[1,2],nrow(dat2), mean(F_2), 
                     mvmr$coefficients[1,1],mvmr$coefficients[1,2], sum(Qind_1)/(nrow(mv)-1), 
                     mvmr$coefficients[2,1],  mvmr$coefficients[2,2], sum(Qind_2)/(nrow(mv)-1), nrow(mv),
@@ -63,7 +66,10 @@ out <- data.frame(rho, pcor12, pcor23, unix1$coefficients[1,1],unix1$coefficient
   
   
 
-colnames(out) <- c("rho", "pi1_pi2_cor", "pi2_pi3_cor", "uni_x1_b","uni_x1_se", "uni_x1_nsnp","F_x1" , 
+colnames(out) <- c("rho", "cor12", "cor13", "cor23",
+                   "pcor12_3", "pcor23_1",
+                   "var1", "var2", "var3",
+                   "uni_x1_b","uni_x1_se", "uni_x1_nsnp","F_x1" , 
                    "uni_x3_b","uni_x3_se", "uni_x3_nsnp", "F_x3", 
                    "mv_x1_b", "mv_x1_se", "CF_x1", 
                    "mv_x3_b","mv_x3_se", "CF_x3","mv_nsnp", 

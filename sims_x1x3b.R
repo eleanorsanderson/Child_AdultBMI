@@ -27,9 +27,17 @@ beta3 = 0
 results = NULL
 
 #define effects outside the repetitions so they are consistent across the simulations
-effs_g <- rnorm(l,0,sqrt(0.15/l))  
-effs_g2 <- 0.05*effs_g + rnorm((l),0,sqrt(0.15/l))
-effs_g3 <- 0*effs_g + 0.5*effs_g2 + 0.5*rnorm(l,0,sqrt(0.15/l))
+var1 <- 0.10/l
+cor12 <- 0.5
+cor13 <- 0.1
+cor23 <- 0.2
+mu <- as.vector(c(0,0,0))
+sig <- matrix(c(var1, cor12*var1, cor13*var1, cor13*var1, var1, cor23*var1, cor13*var1, cor23*var1, var1), 3, 3)
+effects <- mvrnorm(l, mu, sig)
+
+effs_g <- effects[,1]
+effs_g2 <- (effects[,2])
+effs_g3 <- (effects[,3])
 
 effs_out <- rnorm(lo,0,sqrt(0.3/l))
 effs_c1 <- 0.5
@@ -73,12 +81,18 @@ for(i in 1:reps){
   res <- MRest_x1x3()
   res_x1x3b <- data.frame("x1x3b", res)
   colnames(res_x1x3b)[1] <- ("sim")
-
-  res_x1x3b$beta1_u <- beta1 + 0.1*(beta2+0.1*beta3) + cor(effs_g, effs_g2)*beta2 + cor(effs_g, effs_g3)*beta3
-  res_x1x3b$beta3_u <- beta3 + cor(effs_g, effs_g3)*(beta1+0.1*beta2) + cor(effs_g2, effs_g3)*beta2
   
-  res_x1x3b$beta1_m <- beta1 + (pcor.test(effs_g,effs_g2,effs_g3)$estimate)*beta2
-  res_x1x3b$beta3_m <- beta3 + (pcor.test(effs_g2,effs_g3,effs_g)$estimate)*beta2
+  
+  res_x1x3b$corl1l2 <- cor(L1,L2)
+  res_x1x3b$corl1l3 <- cor(L1,L3)
+  res_x1x3b$corl2l3 <- cor(L2,L3)
+
+  res_x1x3b$beta1_u <- beta1 + 0.1*beta2 + 0.01*beta3 + res_x1x3b$cor12*(sqrt(res_x1x3b$var2)/sqrt(res_x1x3b$var1))*beta2 + res_x1x3b$cor13*(sqrt(res_x1x3b$var3)/sqrt(res_x1x3b$var1))*beta3 
+  res_x1x3b$beta3_u <- beta3 + res_x1x3b$cor13*(sqrt(res_x1x3b$var1)/sqrt(res_x1x3b$var3))*(beta1 +0.1*beta2) + res_x1x3b$cor23*(sqrt(res_x1x3b$var2)/sqrt(res_x1x3b$var3))*beta2 
+  
+  res_x1x3b$beta1_m <- beta1 + res_x1x3b$pcor12_3*(sqrt(res_x1x3b$var2)/sqrt(res_x1x3b$var1))*beta2
+  res_x1x3b$beta3_m <- beta3 + res_x1x3b$pcor23_1*(sqrt(res_x1x3b$var2)/sqrt(res_x1x3b$var3))*beta2
+  
   
   results <- rbind(results,res_x1x3b)
   

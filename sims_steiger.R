@@ -6,6 +6,7 @@ set.seed(4)
 
 
 library(MASS)
+#library(tidyverse)
 source('MRest_steiger.R')
 
 make_geno <- function(nid, nsnp, af)
@@ -14,7 +15,7 @@ make_geno <- function(nid, nsnp, af)
 }
 
 
-reps = 2
+reps = 1000
 n = 150000 #number of individuals
 l = 150    #number of SNPs (for exposures - total)
 lo = 50 #number of SNPs for outcome
@@ -24,6 +25,8 @@ results = NULL
 #define effects outside the repetitions so they are consistent across the simulations
 effs_g <- rnorm(l,0,sqrt(0.15/l))  
 effs_g2 <- 0.3*effs_g + rnorm((l),0,sqrt(0.15/l))
+
+
 effs_out <- rnorm(lo,0,sqrt(0.3/l))
 effs_c1 <- 0.5
 effs_c2 <- 0.5

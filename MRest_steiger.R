@@ -1,5 +1,5 @@
 
-MRest <- function()
+MRest_steiger <- function()
 {
   
   mvdat <- data.frame()
@@ -25,7 +25,10 @@ MRest <- function()
                        "outcome_se","exposure_pval.x1", "exposure_pval.x2", "outcome_pval" )
   
  #steiger filtering
-  mvdat<-filter(mvdat, !(exposure_pval.x2<5e-8 & outcome_pval < exposure_pval.x2))
+  mvdat$diff <- as.numeric(mvdat$outcome_pval < mvdat$exposure_pval.x2)
+  mvdat$x2small <- as.numeric(mvdat$exposure_pval.x2 <  5e-08)
+  mvdat$both <- as.numeric(mvdat$diff==1 & mvdat$x2small ==1)
+  mvdat <- mvdat[(mvdat$both==0),]
 
  dat1 <- subset(mvdat, mvdat$exposure_pval.x1 < 5e-08)
 
@@ -54,13 +57,17 @@ MRest <- function()
   snps_outx1 <- as.numeric(sum((mvdat$exposure_pval.x1[(l+1):(l+lo)]<5e-08)))
   snps_outx2 <- as.numeric(sum((mvdat$exposure_pval.x2[(l+1):(l+lo)]<5e-08)))
   
+  out <- data.frame(rho, unix1$coefficients[1,1],unix1$coefficients[1,2], nrow(dat1), mean(F_1), 
+                    unix2$coefficients[1,1],unix2$coefficients[1,2],nrow(dat2), mean(F_2), 
+                    mvmr$coefficients[1,1],mvmr$coefficients[1,2], sum(Qind_1)/(nrow(mv)-1), 
+                    mvmr$coefficients[2,1],  mvmr$coefficients[2,2], sum(Qind_2)/(nrow(mv)-1), nrow(mv),
+                    snps_outx1, snps_outx2)
+  
  
-colnames(out) <- c("rho", "L1_L2_cor", "uni_x1_b","uni_x1_se", "uni_x1_nsnp","F_x1" , 
+colnames(out) <- c("rho", "uni_x1_b","uni_x1_se", "uni_x1_nsnp","F_x1" , 
                    "uni_x2_b","uni_x2_se", "uni_x2_nsnp", "F_x2", 
                        "mv_x1_b",     "mv_x1_se", "CF_x1", 
-                   "mv_x2_b","mv_x2_se",  "CF_x2","mv_nsnp", 
-                   "mv_nsnp_res", "mv_x1_b_res","mv_x1_se_res", "CF_x1_res", 
-                   "mv_x2_b_res",   "mv_x2_se_res", "CF_x2_res", 
+                   "mv_x2_b","mv_x2_se",  "CF_x2","mv_nsnp",
                    "snps_outx1", "snps_outx2")
   
 return(out)
